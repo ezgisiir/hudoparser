@@ -18,70 +18,77 @@ import java.util.Set;
 
 public class Main {
 
-    public static void main(String[] args) {
-        try {
-            String[] countries = {"TUR","HUN","POL"};
-            for (String country : countries) {
-                System.out.println("Running for country:" + country);
-                StringBuilder sb = new StringBuilder();
-                sb.append("APPNO").append(",").append("KPDATE").append(System.lineSeparator());
-                Set<String> uniqueAppNos = new HashSet<>();
-                int start = 0;
-                final int fetchCount = 200;
-                boolean hasMore = true;
+  public static void main(String[] args) {
+    try {
+      String[] countries = {"TUR", "HUN", "POL"};
+      for (String country : countries) {
+        System.out.println("Running for country:" + country);
+        StringBuilder sb = new StringBuilder();
+        sb.append("APPNO").append(",").append("KPDATE").append(",").append("DOCNAME")
+            .append(System.lineSeparator());
+        Set<String> uniqueAppNos = new HashSet<>();
+        int start = 0;
+        final int fetchCount = 200;
+        boolean hasMore = true;
 
-                while(hasMore){
-                    System.out.println(String.format("Fetching %s - %s", start, (start+fetchCount)));
-                    HttpClient httpClient = HttpClientBuilder.create().build();
-                    HttpGet httpGet = new HttpGet("https://hudoc.echr.coe.int/app/query/results?query=contentsitename%3AECHR%20AND%20(NOT%20(doctype%3DPR%20OR%20doctype%3DHFCOMOLD%20OR%20doctype%3DHECOMOLD))%20AND%20((respondent%3D%22"+country+"%22))%20AND%20((documentcollectionid%3D%22GRANDCHAMBER%22)%20OR%20(documentcollectionid%3D%22CHAMBER%22))%20AND%20(kpdate%3E%3D%222006-06-01T00%3A00%3A00.0Z%22)&select=sharepointid,Rank,ECHRRanking,languagenumber,itemid,docname,doctype,application,appno,conclusion,importance,originatingbody,typedescription,kpdate,kpdateAsText,documentcollectionid,documentcollectionid2,languageisocode,extractedappno,isplaceholder,doctypebranch,respondent,advopidentifier,advopstatus,ecli,appnoparts,sclappnos&sort=&start=" + start + "&length=" + fetchCount +"&rankingModelId=11111111-0000-0000-0000-000000000000");
+        while (hasMore) {
+          System.out.println(String.format("Fetching %s - %s", start, (start + fetchCount)));
+          HttpClient httpClient = HttpClientBuilder.create().build();
+          HttpGet httpGet = new HttpGet(
+              "https://hudoc.echr.coe.int/app/query/results?query=contentsitename%3AECHR%20AND%20(NOT%20(doctype%3DPR%20OR%20doctype%3DHFCOMOLD%20OR%20doctype%3DHECOMOLD))%20AND%20((respondent%3D%22"
+                  + country
+                  + "%22))%20AND%20((documentcollectionid%3D%22GRANDCHAMBER%22)%20OR%20(documentcollectionid%3D%22CHAMBER%22))%20AND%20(kpdate%3E%3D%222016-01-01T00%3A00%3A00.0Z%22%20AND%20kpdate%3C%3D%222019-12-28T00%3A00%3A00.0Z%22)&select=sharepointid,Rank,ECHRRanking,languagenumber,itemid,docname,doctype,application,appno,conclusion,importance,originatingbody,typedescription,kpdate,kpdateAsText,documentcollectionid,documentcollectionid2,languageisocode,extractedappno,isplaceholder,doctypebranch,respondent,advopidentifier,advopstatus,ecli,appnoparts,sclappnos&sort=&start="
+                  + start + "&length=" + fetchCount
+                  + "&rankingModelId=11111111-0000-0000-0000-000000000000");
+//                    HttpGet httpGet = new HttpGet("https://hudoc.echr.coe.int/app/query/results?query=contentsitename%3AECHR%20AND%20(NOT%20(doctype%3DPR%20OR%20doctype%3DHFCOMOLD%20OR%20doctype%3DHECOMOLD))%20AND%20((respondent%3D%22"+country+"%22))%20AND%20((documentcollectionid%3D%22GRANDCHAMBER%22)%20OR%20(documentcollectionid%3D%22CHAMBER%22))%20AND%20(kpdate%3E%3D%222006-06-01T00%3A00%3A00.0Z%22)&select=sharepointid,Rank,ECHRRanking,languagenumber,itemid,docname,doctype,application,appno,conclusion,importance,originatingbody,typedescription,kpdate,kpdateAsText,documentcollectionid,documentcollectionid2,languageisocode,extractedappno,isplaceholder,doctypebranch,respondent,advopidentifier,advopstatus,ecli,appnoparts,sclappnos&sort=&start=" + start + "&length=" + fetchCount +"&rankingModelId=11111111-0000-0000-0000-000000000000");
 
-                    String responseStr = EntityUtils.toString(httpClient.execute(httpGet).getEntity());
+          String responseStr = EntityUtils.toString(httpClient.execute(httpGet).getEntity());
 
-                    HudoResults hudoResults = parseHudoResults(responseStr);
-                    Integer resultCount = hudoResults.getResultcount();
+          HudoResults hudoResults = parseHudoResults(responseStr);
+          Integer resultCount = hudoResults.getResultcount();
 
-                    start = start + fetchCount;
+          start = start + fetchCount;
 
-                    if(resultCount <= start){
-                        hasMore = false;
-                    }
+          if (resultCount <= start) {
+            hasMore = false;
+          }
 
-                    List<Result> results = hudoResults.getResults();
-                    for (Result result : results) {
-                        Columns columns = result.getColumns();
-                        String appNo = columns.getAppno();
-                        String kpDate = columns.getKpdate();
-                        if(!uniqueAppNos.contains(appNo)){
-                            sb.append(appNo).append(",").append(kpDate).append(System.lineSeparator());
-                            uniqueAppNos.add(appNo);
-                        }
-                    }
-                }
-
-
-
-                String fileContent = sb.toString();
-
-                File hudoResultsCSV = new File("hudoResults_" + country +".csv");
-
-                FileUtils.writeStringToFile(hudoResultsCSV,fileContent,"utf-8");
-
-                System.out.println("Completed for country:" + country);
+          List<Result> results = hudoResults.getResults();
+          for (Result result : results) {
+            Columns columns = result.getColumns();
+            String appNo = columns.getAppno();
+            String kpDate = columns.getKpdate();
+            String docName = columns.getDocname();
+            if (!uniqueAppNos.contains(appNo)) {
+              sb.append(appNo).append(",").append(kpDate).append(",").append(docName)
+                  .append(System.lineSeparator());
+              uniqueAppNos.add(appNo);
             }
-
-        } catch (Throwable t) {
-            t.printStackTrace();
-            System.err.println("YAPAMADIM ABI!!!!!");
+          }
         }
 
+        String fileContent = sb.toString();
+
+        File hudoResultsCSV = new File("hudoResults2_" + country + ".csv");
+
+        FileUtils.writeStringToFile(hudoResultsCSV, fileContent, "utf-8");
+
+        System.out.println("Completed for country:" + country);
+      }
+
+    } catch (Throwable t) {
+      t.printStackTrace();
+      System.err.println("YAPAMADIM ABI!!!!!");
     }
 
+  }
 
 
-    private static HudoResults parseHudoResults(String response) throws com.fasterxml.jackson.core.JsonProcessingException {
-        ObjectMapper om = new ObjectMapper();
-        return om.readValue(response, HudoResults.class);
-    }
+  private static HudoResults parseHudoResults(String response)
+      throws com.fasterxml.jackson.core.JsonProcessingException {
+    ObjectMapper om = new ObjectMapper();
+    return om.readValue(response, HudoResults.class);
+  }
 
 
 }
